@@ -6,6 +6,7 @@ PathBar::PathBar(QWidget *parent) : QWidget(parent)
     m_layout = new QHBoxLayout(this);
     m_group = new QButtonGroup(this);
     m_group->setExclusive(true);
+    m_layout->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     setLayout(m_layout);
 }
 
@@ -23,14 +24,21 @@ void PathBar::setPath(const QString &path)
         delete item;
     }
 
-    // 添加按钮和QLabel
+    // 添加第一个按钮
+    QPushButton *firstButton = new QPushButton(m_pathList.first(), this);
+    firstButton->setFlat(true);
+    firstButton->setCheckable(true);
+    firstButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    connect(firstButton, &QPushButton::clicked, this, &PathBar::onButtonClicked);
+    m_group->addButton(firstButton);
+    m_layout->addWidget(firstButton);
+
+    // 添加剩余的按钮和QLabel
     QStringList::const_iterator iter;
-    for (iter = m_pathList.constBegin(); iter != m_pathList.constEnd(); ++iter) {
-        if (iter != m_pathList.constBegin()) {
-            QLabel *label = new QLabel("<", this);
-            label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-            m_layout->addWidget(label);
-        }
+    for (iter = m_pathList.constBegin() + 1; iter != m_pathList.constEnd(); ++iter) {
+        QLabel *label = new QLabel(">", this);
+        label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+        m_layout->addWidget(label);
 
         QPushButton *button = new QPushButton(*iter, this);
         button->setFlat(true);
@@ -40,6 +48,12 @@ void PathBar::setPath(const QString &path)
         m_group->addButton(button);
         m_layout->addWidget(button);
     }
+
+    // 设置第一个按钮为选中状态
+    firstButton->click();
+
+    // 设置布局长度随按钮改变而改变
+    m_layout->addStretch();
 }
 
 void PathBar::onButtonClicked()
@@ -64,7 +78,7 @@ void PathBar::onButtonClicked()
     QStringList::const_iterator iter;
     if(index + 1 < m_pathList.size())
     {
-        QLabel *label = new QLabel("<", this);
+        QLabel *label = new QLabel(">", this);
         label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         m_layout->insertWidget(index*2+1, label);
 
@@ -78,7 +92,9 @@ void PathBar::onButtonClicked()
     }
 
     // 发送路径改变信号
-    QString path = m_pathList.mid(0, index + 1).join("\\");
-    qDebug()<<path;
-    emit pathChanged(path);
+//    QString path = m_pathList.mid(0, index + 1).join("\\");
+//    qDebug()<<path;
+
+    m_layout->setSizeConstraint(QLayout::SetMinAndMaxSize);
+    emit pathChanged(button->text());
 }
